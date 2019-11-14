@@ -6,7 +6,7 @@
 /*   By: amdedieu <amdedieu@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/10/21 16:26:13 by amdedieu          #+#    #+#             */
-/*   Updated: 2019/11/06 16:26:58 by amdedieu         ###   ########.fr       */
+/*   Updated: 2019/11/14 20:10:53 by amdedieu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,109 +17,141 @@ int		ft_strlen(char *str)
 	int i;
 
 	i = 0;
+	if (!str)
+		return (0);
 	while (str[i])
 		i++;
 	return (i);
 }
 
-char *ft_line(char *buf, char c)
+int		ft_find_nl(char *cache)
 {
-	char *ret;
-	int i;
+	size_t	i;
+	size_t	size;
 
 	i = 0;
-	while (buf[i] != c)
-		i++;
-	if (!(ret = malloc(sizeof(char) * i + 1)))
-		return (NULL);
-	i = 0;
-	while (buf[i] != c)
+	size = ft_strlen(cache);
+	while (i < size)
 	{
-		ret[i] = buf[i];
+		if (cache[i] == '\n')
+			return (i);
 		i++;
 	}
-	return (ret);
+	return (i - 1);
+}
+
+char	*ft_strndup(char *s, int size)
+{
+	char	*dst;
+	int		i;
+
+	i = -1;
+	if (!(dst = malloc(sizeof(char) * size + 1)))
+		return (NULL);
+	while (++i < size)
+		dst[i] = s[i];
+	dst[i] = '\0';
+	return (dst);
+}
+
+int		ft_check_cache(char *cache)
+{
+	int i;
+	int count;
+
+	if (!cache)
+		return (0);
+	i = -1;
+	count = 0;
+	while (cache[++i])
+		(cache[i] == '\n') ? count++ : 0;
+	return (count > 1 ? 1 : 0);
+}
+
+int 	ft_fill_line(char *cache, char c, char **line)
+{
+	int i;
+	char *ret;
+	int size;
+
+	size = ft_find_nl(cache);
+	i = -1;
+	ret = ft_strndup(cache, size);
+	if (*line)
+		free(*line);
+	*line = ret;
+	return (0);
 }
 
 char	*ft_strjoin(char *s1, char *s2)
 {
 	char	*str;
-	size_t	j;
-	size_t	i;
+	int	j;
+	int	i;
 
-	if (!s1 || !s2)
-		return (NULL);
 	i = ft_strlen((char*)s1);
 	j = ft_strlen((char*)s2);
 	if (!(str = malloc(sizeof(char) * (i + j) + 1)))
 		return (NULL);
-	i = 0;
+	i = -1;
 	j = 0;
-	while (i < ft_strlen(s1))
-	{
+	while (++i < ft_strlen(s1))
 		str[i] = s1[i];
-		i++;
-	}
 	while (j < ft_strlen(s2))
 		str[i++] = s2[j++];
 	str[i] = '\0';
 	return (str);
 }
 
-int		ft_strchr(char *s, int c)
-{
-	int		i;
-	int		size;
-	char	*str;
-
-	i = 0;
-	size = 0;
-	str = (char*)s;
-	while (str[size])
-		size++;
-	while (i < size + 1)
-	{
-		if (str[i] == c)
-			return (i);
-		i++;
-	}
-	return (0);
-}
 
 int		get_next_line(int fd, char **line)
 {
-	char	*buf;
-	static	char	*cache;
-	size_t	i;
-	size_t  j;
-	
-	i = 0;
-	j = 0;
-	if (*line = malloc(sizepf(BUFFER_SIZE)))
-		return (NULL); 
-	while (read(fd, buf, BUFFER_SIZE))
-	{ 
-		while (i < BUFFER_SIZE)
-		{
-			*line[i] = buf[i];
-			i++;
-		}
+	char	buf[BUFFER_SIZE + 1];
+	char	*tmp;
+	static	char	*cache = NULL;
+	int 			res;
 
+	if (fd < 0)
+		return (-1);
+	while (!ft_check_cache(cache) && (res = read(fd, buf, BUFFER_SIZE)))
+	{
+		buf[res] = '\0';
+		tmp = cache;
+		cache = ft_strjoin(tmp, buf);
+		free(tmp);
 	}
+	if (cache)
+	{
+		ft_fill_line(cache,'\n', line);
+		tmp = cache;
+		res = ft_find_nl(cache) + 1;
+		if (res >= ft_strlen(cache))
+		{
+			free(cache);
+			cache = NULL;
+			return (1);
+		}
+		cache = ft_strndup(cache + res, ft_strlen(cache + res));
+		free(tmp);
+	}
+	else
+		return (0);
+	return (1);
 }
 
 int	main(int argc, char **argv)
 {
 	int fd;
-	int i;
 	char *res;
 
 	if ((fd = open(argv[1], O_RDONLY)) == -1)
 		return (0);
 	while (get_next_line(fd, &res) == 1)
 	{
-		write(1, res, ft_strlen(res));
-		write(1, "\n", 1);
+		printf("-> %s\n", res);
+		//write(1, res, ft_strlen(res));
+		//write(1, "\n", 1);
 	}
+	while (1);
 	return (0);
 }
