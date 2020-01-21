@@ -5,27 +5,23 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: amdedieu <amdedieu@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2019/10/28 16:55:51 by amdedieu          #+#    #+#             */
-/*   Updated: 2019/11/14 20:05:26 by amdedieu         ###   ########.fr       */
+/*   Created: 2020/01/21 16:23:43 by amdedieu          #+#    #+#             */
+/*   Updated: 2020/01/21 16:43:13 by amdedieu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef GET_NEXT_LINE
-# define GET_NEXT_LINE
+#ifndef GET_NEXT_LINE_H
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+# define GET_NEXT_LINE_H
+# include <unistd.h>
+# include <stdlib.h>
 
-# define BUFFER_SIZE 600
-
-typedef struct s_dwqdqwdwq
-{
- int i;
-	int d;
-} 		t_struct;
+int		ft_strlen(char *str);
+char	*ft_strndup(char **s1, int size, int i);
+char	*ft_strjoinfree(char **s1, char *s2);
+int		find_nl(char *cache, int i, char c);
+void	ft_fill_line(char **cache, char **line);
+int		get_next_line(int fd, char **line);
+int		ft_return(int ret, char **cache, char *buf, char **line);
 
 #endif

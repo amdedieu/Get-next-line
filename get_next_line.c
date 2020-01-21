@@ -5,153 +5,86 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: amdedieu <amdedieu@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2019/10/21 16:26:13 by amdedieu          #+#    #+#             */
-/*   Updated: 2019/11/14 20:10:53 by amdedieu         ###   ########.fr       */
+/*   Created: 2019/12/12 17:47:17 by ameliadedie       #+#    #+#             */
+/*   Updated: 2020/01/21 16:44:03 by amdedieu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-int		ft_strlen(char *str)
+int		find_nl(char *cache, int i, char c)
 {
-	int i;
-
-	i = 0;
-	if (!str)
-		return (0);
-	while (str[i])
-		i++;
-	return (i);
-}
-
-int		ft_find_nl(char *cache)
-{
-	size_t	i;
-	size_t	size;
-
-	i = 0;
-	size = ft_strlen(cache);
-	while (i < size)
-	{
-		if (cache[i] == '\n')
-			return (i);
-		i++;
-	}
-	return (i - 1);
-}
-
-char	*ft_strndup(char *s, int size)
-{
-	char	*dst;
-	int		i;
-
-	i = -1;
-	if (!(dst = malloc(sizeof(char) * size + 1)))
-		return (NULL);
-	while (++i < size)
-		dst[i] = s[i];
-	dst[i] = '\0';
-	return (dst);
-}
-
-int		ft_check_cache(char *cache)
-{
-	int i;
-	int count;
-
 	if (!cache)
 		return (0);
-	i = -1;
-	count = 0;
-	while (cache[++i])
-		(cache[i] == '\n') ? count++ : 0;
-	return (count > 1 ? 1 : 0);
-}
-
-int 	ft_fill_line(char *cache, char c, char **line)
-{
-	int i;
-	char *ret;
-	int size;
-
-	size = ft_find_nl(cache);
-	i = -1;
-	ret = ft_strndup(cache, size);
-	if (*line)
-		free(*line);
-	*line = ret;
+	while (cache[i])
+	{
+		if (cache[i] == c)
+			return (i + 1);
+		i++;
+	}
 	return (0);
 }
 
-char	*ft_strjoin(char *s1, char *s2)
+void	ft_fill_line(char **cache, char **line)
 {
-	char	*str;
-	int	j;
-	int	i;
+	int		i;
+	int		j;
+	int		size;
 
-	i = ft_strlen((char*)s1);
-	j = ft_strlen((char*)s2);
-	if (!(str = malloc(sizeof(char) * (i + j) + 1)))
-		return (NULL);
-	i = -1;
+	i = 0;
 	j = 0;
-	while (++i < ft_strlen(s1))
-		str[i] = s1[i];
-	while (j < ft_strlen(s2))
-		str[i++] = s2[j++];
-	str[i] = '\0';
-	return (str);
+	size = (find_nl(*cache, 0, '\n') ? find_nl(*cache, 0, '\n')
+		: ft_strlen(*cache));
+	if (!((*line) = malloc(sizeof(char) * (size + 1))))
+		return ;
+	while (i < size)
+	{
+		*((*line) + j) = *((*cache) + i);
+		i++;
+		j++;
+	}
+	(*((*line) + (size > 1 ? size - 1 : 0))) = '\0';
+	*cache = ft_strndup(cache, ft_strlen(*cache), find_nl(*cache, 0, '\n'));
 }
 
-
-int		get_next_line(int fd, char **line)
+int		ft_return(int ret, char **cache, char *buf, char **line)
 {
-	char	buf[BUFFER_SIZE + 1];
-	char	*tmp;
-	static	char	*cache = NULL;
-	int 			res;
-
-	if (fd < 0)
-		return (-1);
-	while (!ft_check_cache(cache) && (res = read(fd, buf, BUFFER_SIZE)))
+	if (ret >= 0)
 	{
-		buf[res] = '\0';
-		tmp = cache;
-		cache = ft_strjoin(tmp, buf);
-		free(tmp);
-	}
-	if (cache)
-	{
-		ft_fill_line(cache,'\n', line);
-		tmp = cache;
-		res = ft_find_nl(cache) + 1;
-		if (res >= ft_strlen(cache))
+		buf[ret] = '\0';
+		*cache = ft_strjoinfree(cache, buf);
+		if (!find_nl(*cache, 0, '\n'))
 		{
-			free(cache);
-			cache = NULL;
-			return (1);
+			*line = ft_strndup(cache, ft_strlen(*cache) + 1, 0);
+			return (0);
 		}
-		cache = ft_strndup(cache + res, ft_strlen(cache + res));
-		free(tmp);
 	}
-	else
-		return (0);
+	ft_fill_line(cache, line);
 	return (1);
 }
 
-int	main(int argc, char **argv)
+int		get_next_line(int fd, char **line)
 {
-	int fd;
-	char *res;
+	char		buf[BUFFER_SIZE + 1];
+	int			ret;
+	static char	*cache = NULL;
 
-	if ((fd = open(argv[1], O_RDONLY)) == -1)
-		return (0);
-	while (get_next_line(fd, &res) == 1)
+	if ((fd < 0 || line == NULL || BUFFER_SIZE <= 0 || read(fd, buf, 0) < 0))
+		return (-1);
+	if (find_nl(cache, 0, '\n'))
 	{
-		printf("-> %s\n", res);
-		//write(1, res, ft_strlen(res));
-		//write(1, "\n", 1);
+		ft_fill_line(&cache, line);
+		return (1);
 	}
-	while (1);
-	return (0);
+	while ((ret = read(fd, buf, BUFFER_SIZE)) == BUFFER_SIZE)
+	{
+		buf[ret] = '\0';
+		cache = ft_strjoinfree(&cache, buf);
+		if (find_nl(buf, 0, '\n'))
+		{
+			ft_fill_line(&cache, line);
+			return (1);
+		}
+	}
+	return (ft_return(ret, &cache, buf, line));
 }
